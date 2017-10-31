@@ -41,7 +41,7 @@
  * @ingroup Tools
  * @param[in] str input debug message
  */
-inline void debug_msg(const char *str);
+void debug_msg(const char *str);
 
 
 /** Structure for threaded exponentiation
