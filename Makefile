@@ -9,4 +9,5 @@ install: | exports
 	-@cmake --build build --
 
 clean:
-	-@rm -rf build test/tmp
+	-@rm -rf build
+	-@rm test/tmp/* bin/* lib/*

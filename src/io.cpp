@@ -1,6 +1,6 @@
 #include <fstream>
+#include "impl.hpp"
 #include "io.hpp"
-#include "paillier.hpp"
 
 namespace paillier
 {

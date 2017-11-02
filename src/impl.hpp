@@ -1,5 +1,5 @@
-#ifndef PAILLIER_HPP
-#define PAILLIER_HPP
+#ifndef PAILLIER_IMPL_HPP
+#define PAILLIER_IMPL_HPP
 
 #include <iostream>
 #include <gmpxx.h>
@@ -36,7 +36,7 @@ public:
   mpz_class text;
   PlainText() = default;
   PlainText(mpz_class text) : text(text) {}
-  CipherText encrypt(PublicKey pub);
+  CipherText encrypt(PublicKey pub) const;
 
   friend std::istream &operator>>(std::istream &is, PlainText &plain);
   friend std::ostream &operator<<(std::ostream &os, const PlainText &plain);

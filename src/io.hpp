@@ -1,5 +1,5 @@
-#ifndef IO_HPP
-#define IO_HPP
+#ifndef PAILLIER_IO_HPP
+#define PAILLIER_IO_HPP
 
 #include <gmpxx.h>
 #include <string>

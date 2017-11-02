@@ -1,4 +1,4 @@
-#include "paillier.hpp"
+#include "impl.hpp"
 #include <stdexcept>
 #include "tools.hpp"
 
@@ -43,7 +43,7 @@ std::ostream &operator<<(std::ostream &os, const CipherText &cipher)
     return os;
 }
 
-CipherText PlainText::encrypt(PublicKey pub)
+CipherText PlainText::encrypt(PublicKey pub) const
 {
     mpz_class result{};
     if (mpz_cmp(pub.n.get_mpz_t(), text.get_mpz_t()))

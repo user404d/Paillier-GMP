@@ -1,9 +1,9 @@
-#ifndef TOOLS_HPP
-#define TOOLS_HPP
+#ifndef PAILLIER_TOOLS_HPP
+#define PAILLIER_TOOLS_HPP
 
 #include <future>
-#include <iostream>
 #include <gmpxx.h>
+#include <iostream>
 #include <random>
 #include <string>
 

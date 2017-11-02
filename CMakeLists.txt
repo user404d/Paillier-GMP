@@ -29,13 +29,25 @@ endif()
 find_library(GMP gmp)
 find_library(GMPXX gmpxx)
 
-include_directories(/usr/local/include)
+include_directories(/usr/local/include include src)
 
-add_executable(paillier
-               src/io.cpp
-               src/main.cpp
-               src/paillier.cpp
-               src/secure_dot_product.cpp
-               src/tools.cpp)
-
+add_library(paillier SHARED
+            src/impl.cpp
+            src/io.cpp
+            src/secure_dot_product.cpp
+            src/tools.cpp)
 target_link_libraries(paillier ${GMP} ${GMPXX})
+set_target_properties(paillier PROPERTIES
+                      LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+
+add_executable(secure_dot_product
+               example/main.cpp)
+target_link_libraries(secure_dot_product paillier)
+set_target_properties(secure_dot_product PROPERTIES
+                      RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+enable_testing()
+
+add_executable(tester test/add.cpp)
+target_link_libraries(tester paillier)
+add_test(Tester tester)
