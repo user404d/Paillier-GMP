@@ -8,22 +8,22 @@ namespace paillier
 namespace impl
 {
 
-CipherText CipherText::add(CipherText a, PublicKey pub)
+CipherText CipherText::add(CipherText a, PublicKey pub) const
 {
     mpz_class n2 = pub.n * pub.n;
-    return {mpz_class(text * a.text) % n2};
+    return {(text * a.text) % n2};
 }
 
-PlainText CipherText::decrypt(PrivateKey priv)
+PlainText CipherText::decrypt(PrivateKey priv) const
 {
-    mpz_class p_text = tools::crt_exponentiation(text, priv.lambda, priv.lambda, priv.p2invq2, priv.p2, priv.q2);
-    p_text = ell(p_text, priv.ninv, priv.len);
+    mpz_class crt = tools::crt_exponentiation(text, priv.lambda, priv.lambda, priv.p2invq2, priv.p2, priv.q2);
+    mpz_class p_text = ell(crt, priv.ninv, priv.len);
     p_text *= priv.mu;
     p_text %= priv.n;
     return {p_text};
 }
 
-CipherText CipherText::mult(mpz_class constant, PublicKey pub)
+CipherText CipherText::mult(mpz_class constant, PublicKey pub) const
 {
     mpz_class result{};
     mpz_class n2 = pub.n * pub.n;
@@ -46,19 +46,19 @@ std::ostream &operator<<(std::ostream &os, const CipherText &cipher)
 CipherText PlainText::encrypt(PublicKey pub) const
 {
     mpz_class result{};
-    if (mpz_cmp(pub.n.get_mpz_t(), text.get_mpz_t()))
+    if (cmp(pub.n, text))
     {
         mpz_class n2 = pub.n * pub.n;
         mpz_class random = tools::gen_pseudorandom(pub.len);
         random %= pub.n;
-        if (mpz_cmp_ui(random.get_mpz_t(), 0) == 0)
+        if (random == static_cast<unsigned int>(0))
         {
-            throw std::runtime_error("random number was zero");
+            throw std::runtime_error("random number was multiple of n");
         }
         mpz_powm(result.get_mpz_t(), random.get_mpz_t(), pub.n.get_mpz_t(), n2.get_mpz_t());
-        random = text * pub.n;
-        random += 1;
-        result *= random;
+        mpz_class temp = text * pub.n;
+        temp += 1;
+        result *= temp;
         result %= n2;
     }
     return {result};
@@ -126,8 +126,7 @@ KeyPair keygen(mp_bitcnt_t len)
     mpz_invert(p2invq2.get_mpz_t(), p2.get_mpz_t(), q2.get_mpz_t());
     mpz_class p_1 = p - 1;
     mpz_class q_1 = q - 1;
-    mpz_class lambda{};
-    mpz_lcm(lambda.get_mpz_t(), p_1.get_mpz_t(), q_1.get_mpz_t());
+    mpz_class lambda = lcm(p_1, q_1);
     mpz_class n2 = n * n;
     temp = tools::crt_exponentiation(g, lambda, lambda, p2invq2, p2, q2);
     temp = ell(temp, ninv, len);
@@ -136,7 +135,7 @@ KeyPair keygen(mp_bitcnt_t len)
     {
         throw std::runtime_error("no inverse mu was found");
     }
-    return KeyPair{{len, lambda, mu, n, ninv, p2, p2invq2, q2}, {len, n}};
+    return {{len, lambda, mu, n, ninv, p2, p2invq2, q2}, {len, n}};
 }
 
 mpz_class ell(mpz_class input, mpz_class ninv, mp_bitcnt_t len)
@@ -145,7 +144,7 @@ mpz_class ell(mpz_class input, mpz_class ninv, mp_bitcnt_t len)
     mpz_class result = input - 1;
     result *= ninv;
     mpz_setbit(mask.get_mpz_t(), len);
-    mpz_sub_ui(mask.get_mpz_t(), mask.get_mpz_t(), 1);
+    mask -= 1;
     result &= mask;
     return result;
 }

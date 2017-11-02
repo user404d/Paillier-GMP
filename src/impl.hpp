@@ -22,9 +22,9 @@ public:
   mpz_class text;
   CipherText() = default;
   CipherText(mpz_class text) : text(text) {}
-  CipherText add(CipherText a, PublicKey pub);
-  PlainText decrypt(PrivateKey priv);
-  CipherText mult(mpz_class c, PublicKey pub);
+  CipherText add(CipherText a, PublicKey pub) const;
+  PlainText decrypt(PrivateKey priv) const;
+  CipherText mult(mpz_class c, PublicKey pub) const;
 
   friend std::istream &operator>>(std::istream &is, CipherText &cipher);
   friend std::ostream &operator<<(std::ostream &os, const CipherText &cipher);

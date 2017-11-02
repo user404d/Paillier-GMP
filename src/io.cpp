@@ -68,14 +68,14 @@ void keygen(ssv pub_out, ssv priv_out, mp_bitcnt_t len)
         pub << pub_key;
         priv << priv_key;
     }
-    catch (const std::runtime_error e)
+    catch (const std::runtime_error &e)
     {
-        std::cerr << e.what() << "\n";
+        std::cerr << e.what() << std::endl;
         exit(1);
     }
     catch (...)
     {
-        std::cerr << "oops\n";
+        std::cerr << "oops" << std::endl;
         exit(1);
     }
 }
