@@ -18,6 +18,7 @@ class PublicKey;
 
 class CipherText
 {
+
 public:
   mpz_class text;
   CipherText() = default;
@@ -49,7 +50,6 @@ public:
   mpz_class lambda,
       mu,
       n,
-      ninv,
       p2,
       p2invq2,
       q2;
@@ -60,14 +60,12 @@ public:
       mpz_class lambda,
       mpz_class mu,
       mpz_class n,
-      mpz_class ninv,
       mpz_class p2,
       mpz_class p2invq2,
       mpz_class q2) : len(len),
                       lambda(lambda),
                       mu(mu),
                       n(n),
-                      ninv(ninv),
                       p2(p2),
                       p2invq2(p2invq2),
                       q2(q2)
@@ -103,7 +101,7 @@ struct KeyPair
 };
 
 KeyPair keygen(mp_bitcnt_t len);
-mpz_class ell(mpz_class input, mpz_class ninv, mp_bitcnt_t len);
+mpz_class ell(mpz_class input, mpz_class n);
 
 //impl
 }

@@ -23,29 +23,30 @@ std::vector<T> read_vector(io::ssv path)
 }
 
 template <class T>
-void write_vector(io::ssv path, std::vector<T> ts)
+void write_vector(io::ssv path, const std::vector<T> &ts)
 {
     std::fstream vector(path.data(), vector.out);
     for (const auto &t : ts)
     {
-        vector << t;
+        vector << t << std::endl;
     }
 }
 
 template <class T, class U>
-std::vector<U> map(std::vector<T> from, std::function<U(const T)> f)
+std::vector<U> map(std::vector<T> from, std::function<U(const T &)> f)
 {
     std::vector<U> to;
     to.reserve(from.size());
     for (const auto &val : from)
     {
-        to.emplace_back(f(val));
+        const U result{f(val)};
+        to.push_back(result);
     }
     return to;
 }
 
 template <class T, class U, class V>
-std::vector<V> pairwise_map(std::vector<T> ts, std::vector<U> us, std::function<V(const T, const U)> f)
+std::vector<V> pairwise_map(const std::vector<T> &ts, const std::vector<U> &us, std::function<V(const T &, const U &)> f)
 {
     std::vector<V> vs;
     vs.reserve(std::min(ts.size(), us.size()));
@@ -57,7 +58,8 @@ std::vector<V> pairwise_map(std::vector<T> ts, std::vector<U> us, std::function<
 
     while (ts_iter != ts_end && us_iter != us_end)
     {
-        vs.emplace_back(f(*ts_iter, *us_iter));
+        const V result{f(*ts_iter, *us_iter)};
+        vs.push_back(result);
         ts_iter++;
         us_iter++;
     }
@@ -66,7 +68,7 @@ std::vector<V> pairwise_map(std::vector<T> ts, std::vector<U> us, std::function<
 }
 
 template <class T, class U>
-U reduce(std::vector<T> ts, std::function<U(const U, const T)> f, U init)
+U reduce(const std::vector<T> &ts, std::function<U(const U &, const T &)> f, U init)
 {
     U acc = init;
     for (const auto &t : ts)

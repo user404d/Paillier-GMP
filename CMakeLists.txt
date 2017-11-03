@@ -48,6 +48,10 @@ set_target_properties(secure_dot_product PROPERTIES
 
 enable_testing()
 
-add_executable(tester test/add.cpp)
-target_link_libraries(tester paillier)
-add_test(Tester tester)
+add_executable(add test/add.cpp)
+target_link_libraries(add paillier)
+
+add_executable(mult test/mult.cpp)
+target_link_libraries(mult paillier)
+add_test(Tester add)
+add_test(Tester mult)

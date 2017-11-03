@@ -21,15 +21,13 @@ void add(ssv cipher_result_out, ssv cipher_a_in, ssv cipher_b_in, ssv pub_key_in
     pub_key >> pub;
     cipher_a >> a;
     cipher_b >> b;
-    result.text = a.text * b.text;
-    cipher_result << result;
+    cipher_result << a.add(b, pub) << std::endl;
 }
 
 void decrypt(ssv plain_out, ssv cipher_in, ssv priv_key_in)
 {
     impl::PrivateKey priv{};
     impl::CipherText c{};
-    impl::PlainText p{};
 
     std::fstream priv_key(priv_key_in.data(), priv_key.in);
     std::fstream cipher(cipher_in.data(), cipher.in);
@@ -37,15 +35,13 @@ void decrypt(ssv plain_out, ssv cipher_in, ssv priv_key_in)
 
     priv_key >> priv;
     cipher >> c;
-    p = c.decrypt(priv);
-    plain << p;
+    plain << c.decrypt(priv) << std::endl;
 }
 
 void encrypt(ssv cipher_out, ssv plain_in, ssv pub_key_in)
 {
     impl::PublicKey pub{};
     impl::PlainText p{};
-    impl::CipherText c{};
 
     std::fstream pub_key(pub_key_in.data(), pub_key.in);
     std::fstream plain(plain_in.data(), plain.in);
@@ -53,8 +49,7 @@ void encrypt(ssv cipher_out, ssv plain_in, ssv pub_key_in)
 
     pub_key >> pub;
     plain >> p;
-    c = p.encrypt(pub);
-    cipher << c;
+    cipher << p.encrypt(pub) << std::endl;
 }
 
 void keygen(ssv pub_out, ssv priv_out, mp_bitcnt_t len)
@@ -84,7 +79,7 @@ void mult_c(ssv cipher_result_out, ssv cipher_in, ssv constant_in, ssv pub_key_i
 {
     impl::PublicKey pub{};
     mpz_class cst{};
-    impl::CipherText c{}, result{};
+    impl::CipherText c{};
 
     std::fstream pub_key(pub_key_in.data(), pub_key.in);
     std::fstream constant(constant_in.data(), constant.in);
@@ -94,8 +89,7 @@ void mult_c(ssv cipher_result_out, ssv cipher_in, ssv constant_in, ssv pub_key_i
     pub_key >> pub;
     constant >> cst;
     cipher >> c;
-    result = c.mult(cst, pub);
-    cipher_result << result;
+    cipher_result << c.mult(cst, pub) << std::endl;
 }
 
 // io
