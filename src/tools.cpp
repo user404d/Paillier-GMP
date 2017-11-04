@@ -16,6 +16,17 @@ inline void debug_msg(std::string_view msg)
 #endif
 }
 
+/*
+ * The exponentiation is computed using Garner's method for the CRT:
+ * 
+ * Exponentiation mod p: y_p = (x mod p)^{exp_p} mod p
+ * Exponentiation mod q: y_q = (x mod q)^{exp_q} mod q
+ * Recombination: y = y_p + p*(p^{-1} mod q)*(y_q-y_p) mod n
+ * 
+ * NOTE: p MUST be greater than q
+ * 
+ * The exponentiations mod p and mod q may run in their own thread.
+ */
 mpz_class crt_exponentiation(const mpz_class base,
                              const mpz_class exp_p,
                              const mpz_class exp_q,
@@ -44,6 +55,9 @@ mpz_class crt_exponentiation(const mpz_class base,
     return result;
 }
 
+/*
+ * Generate probable prime of given bit length.
+ */
 mpz_class Random::prime(const mp_bitcnt_t len)
 {
     const mpz_class random{gen.get_z_bits(len)};
@@ -56,6 +70,9 @@ mpz_class Random::prime(const mp_bitcnt_t len)
     return prime;
 }
 
+/*
+ * Generate random number from 0 to n exclusive.
+ */
 mpz_class Random::random_n(const mpz_class n)
 {
     return gen.get_z_range(n);

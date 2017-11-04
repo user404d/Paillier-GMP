@@ -49,6 +49,26 @@ Usage:
 - Using `--seed arg` has precedence over `--keygen arg`.
 - If public and private keys are already known or generated, then simply remove the `--keygen arg` flag and provide the path to each file.
 
+### Seed File Format
+
+```plain
+<k bits>
+<p>
+<q>
+<g>
+```
+
+#### Seed Example
+
+File `seed.in`.
+
+```plain
+8
+7
+11
+78
+```
+
 ### Key File Format
 
 All values are integers separated by whitespace (newlines by default).
