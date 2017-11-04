@@ -6,4 +6,4 @@
 #include <secure_dot_product.hpp>
 #include <tools.hpp>
 
-#endif
+#endif // PAILLIER_HPP

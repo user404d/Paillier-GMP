@@ -14,12 +14,12 @@ namespace tools
 
 inline void debug_msg(std::string_view msg);
 
-mpz_class crt_exponentiation(mpz_class base,
-                             mpz_class exp_p,
-                             mpz_class exp_q,
-                             mpz_class pinvq,
-                             mpz_class p,
-                             mpz_class q);
+mpz_class crt_exponentiation(const mpz_class base,
+                             const mpz_class exp_p,
+                             const mpz_class exp_q,
+                             const mpz_class pinvq,
+                             const mpz_class p,
+                             const mpz_class q);
 
 class Random
 {
@@ -39,8 +39,8 @@ class Random
         return instance;
     }
 
-    mpz_class prime(mp_bitcnt_t len);
-    mpz_class random_n(mpz_class n);
+    mpz_class prime(const mp_bitcnt_t len);
+    mpz_class random_n(const mpz_class n);
 };
 
 // tools
@@ -48,4 +48,4 @@ class Random
 // paillier
 }
 
-#endif // TOOLS_HPP
+#endif // PAILLIER_TOOLS_HPP

@@ -83,4 +83,4 @@ U reduce(const std::vector<T> &ts, std::function<U(const U &, const T &)> f, U i
 // paillier
 }
 
-#endif
+#endif // PAILLIER_SECURE_DOT_PRODUCT_HPP

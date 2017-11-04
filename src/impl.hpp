@@ -10,40 +10,10 @@ namespace paillier
 namespace impl
 {
 
-class CipherText;
-struct KeyPair;
-class PlainText;
-class PrivateKey;
-class PublicKey;
-
-class CipherText
+namespace key
 {
 
-public:
-  mpz_class text;
-  CipherText() = default;
-  CipherText(mpz_class text) : text(text) {}
-  CipherText add(CipherText a, PublicKey pub) const;
-  PlainText decrypt(PrivateKey priv) const;
-  CipherText mult(mpz_class c, PublicKey pub) const;
-
-  friend std::istream &operator>>(std::istream &is, CipherText &cipher);
-  friend std::ostream &operator<<(std::ostream &os, const CipherText &cipher);
-};
-
-class PlainText
-{
-public:
-  mpz_class text;
-  PlainText() = default;
-  PlainText(mpz_class text) : text(text) {}
-  CipherText encrypt(PublicKey pub) const;
-
-  friend std::istream &operator>>(std::istream &is, PlainText &plain);
-  friend std::ostream &operator<<(std::ostream &os, const PlainText &plain);
-};
-
-class PrivateKey
+class Private
 {
 public:
   mp_bitcnt_t len;
@@ -54,8 +24,8 @@ public:
       p2invq2,
       q2;
 
-  PrivateKey() = default;
-  PrivateKey(
+  Private() = default;
+  Private(
       mp_bitcnt_t len,
       mpz_class lambda,
       mpz_class mu,
@@ -72,40 +42,75 @@ public:
   {
   }
 
-  friend std::istream &operator>>(std::istream &is, PrivateKey &priv);
-  friend std::ostream &operator<<(std::ostream &os, const PrivateKey &priv);
+  friend std::istream &operator>>(std::istream &is, Private &priv);
+  friend std::ostream &operator<<(std::ostream &os, const Private &priv);
 };
 
-class PublicKey
+class Public
 {
 public:
   mp_bitcnt_t len;
   mpz_class n;
 
-  PublicKey() = default;
-  PublicKey(
+  Public() = default;
+  Public(
       mp_bitcnt_t len,
       mpz_class n) : len(len),
                      n(n)
   {
   }
 
-  friend std::istream &operator>>(std::istream &is, PublicKey &pub);
-  friend std::ostream &operator<<(std::ostream &os, const PublicKey &pub);
+  friend std::istream &operator>>(std::istream &is, Public &pub);
+  friend std::ostream &operator<<(std::ostream &os, const Public &pub);
 };
 
-struct KeyPair
+mpz_class ell(const mpz_class input, const mpz_class n);
+std::pair<Private, Public> gen(const mp_bitcnt_t len);
+mpz_class lambda(const mpz_class p, const mpz_class q);
+mpz_class mu(const mpz_class n,
+             const mpz_class g,
+             const mpz_class lambda,
+             const mpz_class p2,
+             const mpz_class p2invq2,
+             const mpz_class q2);
+std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mpz_class q, const mpz_class g);
+
+// key
+}
+
+class CipherText;
+class PlainText;
+
+class CipherText
 {
-  PrivateKey priv;
-  PublicKey pub;
+
+public:
+  mpz_class text;
+  CipherText() = default;
+  CipherText(mpz_class text) : text(text) {}
+  CipherText add(CipherText a, key::Public pub) const;
+  PlainText decrypt(key::Private priv) const;
+  CipherText mult(mpz_class c, key::Public pub) const;
+
+  friend std::istream &operator>>(std::istream &is, CipherText &cipher);
+  friend std::ostream &operator<<(std::ostream &os, const CipherText &cipher);
 };
 
-KeyPair keygen(mp_bitcnt_t len);
-mpz_class ell(mpz_class input, mpz_class n);
+class PlainText
+{
+public:
+  mpz_class text;
+  PlainText() = default;
+  PlainText(mpz_class text) : text(text) {}
+  CipherText encrypt(key::Public pub) const;
+
+  friend std::istream &operator>>(std::istream &is, PlainText &plain);
+  friend std::ostream &operator<<(std::ostream &os, const PlainText &plain);
+};
 
 //impl
 }
 // paillier
 }
 
-#endif
+#endif // PAILLIER_IMPL_HPP
