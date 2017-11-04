@@ -33,6 +33,9 @@ class Random
     }
 
   public:
+    Random(Random const &) = delete;
+    Random(Random &&) = delete;
+
     static Random &get()
     {
         static Random instance;

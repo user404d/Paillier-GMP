@@ -60,8 +60,9 @@ mpz_class crt_exponentiation(const mpz_class base,
  */
 mpz_class Random::prime(const mp_bitcnt_t len)
 {
-    const mpz_class random{gen.get_z_bits(len)};
-    mpz_class prime{};
+    mpz_class random{gen.get_z_bits(len)}, prime{};
+    // ensures that the prime generated has the right number of bits
+    mpz_setbit(random.get_mpz_t(), len - 1);
     mpz_nextprime(prime.get_mpz_t(), random.get_mpz_t());
     while (!mpz_probab_prime_p(prime.get_mpz_t(), 15))
     {
