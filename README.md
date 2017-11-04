@@ -47,6 +47,7 @@ Usage:
 ### Usage Notes
 
 - Using `--seed arg` has precedence over `--keygen arg`.
+- The size of `k` for key generation should be at least `2*s` where `s` is the number of bits needed to represent the dot product. This will allow the computation to be performed safely.
 - If public and private keys are already known or generated, then simply remove the `--keygen arg` flag and provide the path to each file.
 
 ### Seed File Format
