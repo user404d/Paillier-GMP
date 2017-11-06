@@ -43,11 +43,9 @@ mpz_class crt_exponentiation(const mpz_class base,
 
     std::future<mpz_class> reduced_p = std::async(std::launch::async, exponentiate, base, exp_p, p);
     std::future<mpz_class> reduced_q = std::async(std::launch::async, exponentiate, base, exp_q, q);
-    const mpz_class pq{p * q};
-    reduced_p.wait();
-    reduced_q.wait();
-    const mpz_class rp{reduced_p.get()};
-    const mpz_class rq{reduced_q.get()};
+
+    const mpz_class pq{p * q}, rp{reduced_p.get()}, rq{reduced_q.get()};
+
     mpz_class result{(rq - rp + q) * pinvq};
     result = rp + (result % q) * p;
     result %= pq;
