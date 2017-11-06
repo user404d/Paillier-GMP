@@ -16,7 +16,7 @@ namespace key
 class Private
 {
 public:
-  mp_bitcnt_t len;
+  mp_bitcnt_t k;
   mpz_class lambda,
       mu,
       n,
@@ -26,13 +26,13 @@ public:
 
   Private() = default;
   Private(
-      mp_bitcnt_t len,
+      mp_bitcnt_t k,
       mpz_class lambda,
       mpz_class mu,
       mpz_class n,
       mpz_class p2,
       mpz_class p2invq2,
-      mpz_class q2) : len(len),
+      mpz_class q2) : k(k),
                       lambda(lambda),
                       mu(mu),
                       n(n),
@@ -49,14 +49,16 @@ public:
 class Public
 {
 public:
-  mp_bitcnt_t len;
-  mpz_class n;
+  mp_bitcnt_t k;
+  mpz_class n, g;
 
   Public() = default;
   Public(
-      mp_bitcnt_t len,
-      mpz_class n) : len(len),
-                     n(n)
+      mp_bitcnt_t k,
+      mpz_class n,
+      mpz_class g) : k(k),
+                     n(n),
+                     g(g)
   {
   }
 
@@ -65,7 +67,7 @@ public:
 };
 
 mpz_class ell(const mpz_class input, const mpz_class n);
-std::pair<Private, Public> gen(const mp_bitcnt_t len);
+std::pair<Private, Public> gen(const mp_bitcnt_t k);
 mpz_class lambda(const mpz_class p, const mpz_class q);
 mpz_class mu(const mpz_class n,
              const mpz_class g,
@@ -73,6 +75,7 @@ mpz_class mu(const mpz_class n,
              const mpz_class p2,
              const mpz_class p2invq2,
              const mpz_class q2);
+std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mpz_class q);
 std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mpz_class q, const mpz_class g);
 
 // key

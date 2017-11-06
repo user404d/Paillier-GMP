@@ -93,7 +93,7 @@ void keyseed(ssv pub_out, ssv priv_out, ssv seed_in)
 
     try
     {
-        const auto & [ priv_key, pub_key ] = impl::key::seed(k, p, q, g);
+        const auto & [ priv_key, pub_key ] = (g == 0U ? impl::key::seed(k, p, q) : impl::key::seed(k, p, q, g));
         pub << pub_key;
         priv << priv_key;
     }

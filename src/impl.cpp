@@ -1,3 +1,4 @@
+#include <future>
 #include "impl.hpp"
 #include <stdexcept>
 #include "tools.hpp"
@@ -13,13 +14,13 @@ namespace key
 
 std::istream &operator>>(std::istream &is, Private &priv)
 {
-    is >> priv.len >> priv.lambda >> priv.mu >> priv.n >> priv.p2 >> priv.p2invq2 >> priv.q2;
+    is >> priv.k >> priv.lambda >> priv.mu >> priv.n >> priv.p2 >> priv.p2invq2 >> priv.q2;
     return is;
 }
 
 std::ostream &operator<<(std::ostream &os, const Private &priv)
 {
-    os << priv.len << "\n"
+    os << priv.k << "\n"
        << priv.lambda << "\n"
        << priv.mu << "\n"
        << priv.n << "\n"
@@ -31,14 +32,15 @@ std::ostream &operator<<(std::ostream &os, const Private &priv)
 
 std::istream &operator>>(std::istream &is, Public &pub)
 {
-    is >> pub.len >> pub.n;
+    is >> pub.k >> pub.n >> pub.g;
     return is;
 }
 
 std::ostream &operator<<(std::ostream &os, const Public &pub)
 {
-    os << pub.len << "\n"
-       << pub.n;
+    os << pub.k << "\n"
+       << pub.n << "\n"
+       << pub.g;
     return os;
 }
 
@@ -57,21 +59,21 @@ mpz_class ell(const mpz_class input, const mpz_class n)
 /*
  * Generates Private and Public keys using specified bit width.
  * 
- * Public (n,g)
+ * Public (n,g=n+1)
  * Private (lambda, mu)
  * 
  * https://en.wikipedia.org/wiki/Paillier_cryptosystem#Key_generation
  */
-std::pair<Private, Public> gen(const mp_bitcnt_t len)
+std::pair<Private, Public> gen(const mp_bitcnt_t k)
 {
     // find two probable primes p and q
-    mpz_class p{tools::Random::get().prime(len / 2)};
-    mpz_class q{tools::Random::get().prime(len / 2)};
+    mpz_class p{tools::Random::get().prime(k / 2)};
+    mpz_class q{tools::Random::get().prime(k / 2)};
 
     // p needs to be relatively prime to q
     while (p == q)
     {
-        q = tools::Random::get().prime(len / 2);
+        q = tools::Random::get().prime(k / 2);
     }
 
     // p should be less than q for CRT exponentiation
@@ -80,18 +82,7 @@ std::pair<Private, Public> gen(const mp_bitcnt_t len)
         p.swap(q);
     }
 
-    // compute n = p * q, g = n + 1, p^2, q^2
-    const mpz_class n{p * q}, g{n + 1U}, p2{p * p}, q2{q * q};
-
-    // precompute (p^2)^-1 mod (q^2) to speed up CRT exponentiation
-    mpz_class p2invq2{};
-    mpz_invert(p2invq2.get_mpz_t(), p2.get_mpz_t(), q2.get_mpz_t());
-
-    // find lambda and mu for the private key
-    const mpz_class lambda{key::lambda(p, q)};
-    const mpz_class mu{key::mu(n, g, lambda, p2, p2invq2, q2)};
-
-    return {{len, lambda, mu, n, p2, p2invq2, q2}, {len, n}};
+    return key::seed(k, p, q);
 }
 
 /*
@@ -137,6 +128,31 @@ mpz_class mu(const mpz_class n,
     return result;
 }
 
+std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mpz_class q)
+{
+    if (p > q)
+    {
+        throw std::runtime_error("p should be less than q");
+    }
+
+    // compute n = p * q, g = n + 1, p^2, q^2
+    const mpz_class n{p * q},
+        g{n + 1U},
+        p2{p * p},
+        q2{q * q},
+        lambda{key::lambda(p, q)};
+
+    // precompute (p^2)^-1 mod (q^2) to speed up CRT exponentiation
+    mpz_class p2invq2{}, mu{};
+    mpz_invert(p2invq2.get_mpz_t(), p2.get_mpz_t(), q2.get_mpz_t());
+    if (!mpz_invert(mu.get_mpz_t(), lambda.get_mpz_t(), n.get_mpz_t()))
+    {
+        throw std::runtime_error("no inverse, mu, was found");
+    }
+
+    return {{k, lambda, mu, n, p2, p2invq2, q2}, {k, n, 0U}};
+}
+
 /*
  * Seed public and private key generation with parameters k, p, q, and g.
  * Similar to normal generation, but primes p and q are provided.
@@ -150,12 +166,17 @@ std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mp
 
     const mpz_class n{p * q}, p2{p * p}, q2{q * q}, lambda{key::lambda(p, q)};
 
+    if (gcd(g, n) != 1)
+    {
+        throw std::runtime_error("g is not relatively prime to n");
+    }
+
     mpz_class p2invq2{};
     mpz_invert(p2invq2.get_mpz_t(), p2.get_mpz_t(), q2.get_mpz_t());
 
     const mpz_class mu{key::mu(n, g, lambda, p2, p2invq2, q2)};
 
-    return {{k, lambda, mu, n, p2, p2invq2, q2}, {k, n}};
+    return {{k, lambda, mu, n, p2, p2invq2, q2}, {k, n, g}};
 }
 
 // key
@@ -222,15 +243,20 @@ std::ostream &operator<<(std::ostream &os, const CipherText &cipher)
  */
 CipherText PlainText::encrypt(key::Public pub) const
 {
+    static const auto exponentiate = [](const mpz_class basis, const mpz_class exp, const mpz_class modulus) {
+        mpz_class result{};
+        mpz_powm(result.get_mpz_t(), basis.get_mpz_t(), exp.get_mpz_t(), modulus.get_mpz_t());
+        return result;
+    };
     // std::cout << "----------- Encrypting ------------" << std::endl
     //           << "plain: " << text << std::endl
     //           << "n: " << pub.n << std::endl;
     mpz_class result{};
 
-    if (cmp(pub.n, text))
+    if (pub.n != text)
     {
         const mpz_class n2{pub.n * pub.n};
-        mpz_class random{0U};
+        mpz_class random{0U}, temp{};
         // std::cout << "n^2: " << n2 << std::endl;
         /* 
          * Encryption and decryption do not work properly for g = 1+n*m when the
@@ -244,8 +270,19 @@ CipherText PlainText::encrypt(key::Public pub) const
         }
         // std::cout << "random: " << random << std::endl;
 
-        mpz_powm(result.get_mpz_t(), random.get_mpz_t(), pub.n.get_mpz_t(), n2.get_mpz_t());
-        const mpz_class temp{(text * pub.n) + 1U};
+        std::future<mpz_class> f_result = std::async(std::launch::async, exponentiate, random, pub.n, n2);
+
+        if (pub.g == 0U)
+        {
+            temp = (text * pub.n) + 1U;
+        }
+        else
+        {
+            std::future<mpz_class> f_temp = std::async(std::launch::async, exponentiate, pub.g, text, n2);
+            temp = f_temp.get();
+        }
+
+        result = f_result.get();
         result *= temp;
         result %= n2;
     }
