@@ -9,13 +9,13 @@ int main(int argc, char **argv)
 {
     cxxopts::Options options("secure_dot_product", "Secure dot product using Paillier homomorphic encryption");
 
-    int k = 0;
+    uint64_t k = 0;
     std::string eu, ev, priv, pub, result, seed, u, v;
 
     options.add_options()                                                               //
         ("help", "Print help message")                                                  //
         ("seed", "Seed key generation with k,p,q,g", cxxopts::value<std::string>(seed)) //
-        ("keygen", "Generate keys using k bits", cxxopts::value<int>(k))                //
+        ("keygen", "Generate keys using k bits", cxxopts::value<uint64_t>(k))           //
         ("pub", "File for public key", cxxopts::value<std::string>(pub))                //
         ("priv", "File for private key", cxxopts::value<std::string>(priv))             //
         ("u", "File for vector u input", cxxopts::value<std::string>(u))                //
