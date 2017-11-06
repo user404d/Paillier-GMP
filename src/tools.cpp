@@ -3,10 +3,7 @@
 #include <random>
 #include "tools.hpp"
 
-namespace paillier
-{
-
-namespace tools
+namespace paillier::tools
 {
 
 inline void debug_msg(std::string_view msg)
@@ -77,7 +74,4 @@ mpz_class Random::random_n(const mpz_class n)
     return gen.get_z_range(n);
 }
 
-// tools
-}
-// paillier
-}
+} // paillier::tools

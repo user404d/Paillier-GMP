@@ -1,12 +1,6 @@
 #include "secure_dot_product.hpp"
 
-namespace paillier
+namespace paillier::sdp
 {
 
-namespace sdp
-{
-
-// sdp
-}
-// paillier
-}
+} // paillier::sdp

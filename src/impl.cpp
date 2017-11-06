@@ -3,10 +3,7 @@
 #include <stdexcept>
 #include "tools.hpp"
 
-namespace paillier
-{
-
-namespace impl
+namespace paillier::impl
 {
 
 namespace key
@@ -179,8 +176,7 @@ std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mp
     return {{k, lambda, mu, n, p2, p2invq2, q2}, {k, n, g}};
 }
 
-// key
-}
+} // key
 
 /*
  * "Add" two plaintexts homomorphically by multiplying ciphertexts modulo n^2.
@@ -304,7 +300,4 @@ std::ostream &operator<<(std::ostream &os, const PlainText &plain)
     return os;
 }
 
-// impl
-}
-// paillier
-}
+} // paillier::impl

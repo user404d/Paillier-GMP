@@ -10,10 +10,7 @@
 #include <numeric>
 #include <vector>
 
-namespace paillier
-{
-
-namespace sdp
+namespace paillier::sdp
 {
 
 template <class T>
@@ -57,9 +54,6 @@ U reduce(const std::vector<T> &ts, std::function<U(const U &, const T &)> f, U i
     return std::accumulate(ts.begin(), ts.end(), init, f);
 }
 
-// sdp
-}
-// paillier
-}
+} // paillier::sdp
 
 #endif // PAILLIER_SECURE_DOT_PRODUCT_HPP

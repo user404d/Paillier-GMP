@@ -4,10 +4,7 @@
 #include <iostream>
 #include <gmpxx.h>
 
-namespace paillier
-{
-
-namespace impl
+namespace paillier::impl
 {
 
 namespace key
@@ -111,9 +108,6 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const PlainText &plain);
 };
 
-//impl
-}
-// paillier
-}
+} // paillier::impl
 
 #endif // PAILLIER_IMPL_HPP

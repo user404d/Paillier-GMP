@@ -4,10 +4,7 @@
 #include <gmpxx.h>
 #include <string>
 
-namespace paillier
-{
-
-namespace io
+namespace paillier::io
 {
 
 using ssv = std::string_view;
@@ -19,9 +16,6 @@ void keygen(ssv pub_out, ssv priv_out, mp_bitcnt_t len);
 void keyseed(ssv pub_out, ssv priv_out, ssv seed_in);
 void mult_c(ssv cipher_result_out, ssv cipher_in, ssv constant_in, ssv pub_key_in);
 
-// io
-}
-//paillier
-}
+} // paillier::io
 
 #endif // PAILLIER_IO_HPP

@@ -2,10 +2,7 @@
 #include "impl.hpp"
 #include "io.hpp"
 
-namespace paillier
-{
-
-namespace io
+namespace paillier::io
 {
 
 void add(ssv cipher_result_out, ssv cipher_a_in, ssv cipher_b_in, ssv pub_key_in)
@@ -126,7 +123,4 @@ void mult_c(ssv cipher_result_out, ssv cipher_in, ssv constant_in, ssv pub_key_i
     cipher_result << c.mult(cst, pub) << std::endl;
 }
 
-// io
-}
-// paillier
-}
+} // paillier::io

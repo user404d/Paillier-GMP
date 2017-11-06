@@ -6,10 +6,7 @@
 #include <random>
 #include <string>
 
-namespace paillier
-{
-
-namespace tools
+namespace paillier::tools
 {
 
 inline void debug_msg(std::string_view msg);
@@ -46,9 +43,6 @@ class Random
     mpz_class random_n(const mpz_class n);
 };
 
-// tools
-}
-// paillier
-}
+} // paillier::tools
 
 #endif // PAILLIER_TOOLS_HPP
