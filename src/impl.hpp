@@ -75,8 +75,7 @@ mpz_class mu(const mpz_class n,
 std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mpz_class q);
 std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mpz_class q, const mpz_class g);
 
-// key
-}
+} // key
 
 class CipherText;
 class PlainText;
