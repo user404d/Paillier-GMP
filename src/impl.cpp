@@ -1,3 +1,4 @@
+#include <cmath>
 #include <future>
 #include "impl.hpp"
 #include <stdexcept>
@@ -63,14 +64,15 @@ mpz_class ell(const mpz_class input, const mpz_class n)
  */
 std::pair<Private, Public> gen(const mp_bitcnt_t k)
 {
+    const mp_bitcnt_t pk = k / 2, qk = std::ceil(k / 2);
     // find two probable primes p and q
-    mpz_class p{tools::Random::get().prime(k / 2)};
-    mpz_class q{tools::Random::get().prime(k / 2)};
+    mpz_class p{tools::Random::get().prime(pk)};
+    mpz_class q{tools::Random::get().prime(qk)};
 
     // p needs to be relatively prime to q
     while (p == q)
     {
-        q = tools::Random::get().prime(k / 2);
+        q = tools::Random::get().prime(qk);
     }
 
     // p should be less than q for CRT exponentiation
