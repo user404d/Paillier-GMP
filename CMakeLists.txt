@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.2)
 
+cmake_policy(SET CMP0069 NEW)
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo OUTPUT no_ipo LANGUAGES CXX)
+
 set(default_build_type "Release")
 if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
   set(default_build_type "Debug")
@@ -40,11 +44,19 @@ target_link_libraries(paillier ${GMP} ${GMPXX})
 set_target_properties(paillier PROPERTIES
                       LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
+if (ipo)
+    set_property(TARGET paillier PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 add_executable(secure_dot_product
                example/main.cpp)
 target_link_libraries(secure_dot_product paillier)
 set_target_properties(secure_dot_product PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+if (ipo)
+    set_property(TARGET secure_dot_product PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 enable_testing()
 

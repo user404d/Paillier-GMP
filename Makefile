@@ -10,7 +10,7 @@ dirs:
 	@test -d test/tmp || mkdir test/tmp
 
 install: | exports dirs
-	@cmake -H. -Bbuild
+	@if [[ -z `which ninja` ]]; then cmake -H. -Bbuild; else cmake -G Ninja -H. -Bbuild; fi
 	@cmake --build build --
 	@test -d build/tmp || mkdir build/tmp
 
