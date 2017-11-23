@@ -5,7 +5,7 @@
 #include <fstream>
 #include <functional>
 #include <gmpxx.h>
-#include <io.hpp>
+#include "io.hpp"
 #include <iterator>
 #include <numeric>
 #include <vector>
@@ -31,7 +31,7 @@ void write_vector(io::ssv path, const std::vector<T> &ts)
 }
 
 template <class T, class U>
-std::vector<U> map(std::vector<T> from, std::function<U(const T &)> f)
+std::vector<U> map(std::vector<T> from, const std::function<U(const T &)> &f)
 {
     std::vector<U> to;
     to.reserve(from.size());
@@ -40,7 +40,7 @@ std::vector<U> map(std::vector<T> from, std::function<U(const T &)> f)
 }
 
 template <class T, class U, class V>
-std::vector<V> pairwise_map(const std::vector<T> &ts, const std::vector<U> &us, std::function<V(const T &, const U &)> f)
+std::vector<V> pairwise_map(const std::vector<T> &ts, const std::vector<U> &us, const std::function<V(const T &, const U &)> &f)
 {
     std::vector<V> vs;
     vs.reserve(std::min(ts.size(), us.size()));
@@ -49,7 +49,7 @@ std::vector<V> pairwise_map(const std::vector<T> &ts, const std::vector<U> &us, 
 }
 
 template <class T, class U>
-U reduce(const std::vector<T> &ts, std::function<U(const U &, const T &)> f, U init)
+U reduce(const std::vector<T> &ts, const std::function<U(const U &, const T &)> &f, U init)
 {
     return std::accumulate(ts.begin(), ts.end(), init, f);
 }
