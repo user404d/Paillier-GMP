@@ -31,7 +31,7 @@ void write_vector(io::ssv path, const std::vector<T> &ts)
 }
 
 template <class T, class U>
-std::vector<U> map(std::vector<T> from, const std::function<U(const T &)> &f)
+std::vector<U> map(const std::vector<T> &from, const std::function<U(const T &)> &f)
 {
     std::vector<U> to;
     to.reserve(from.size());
