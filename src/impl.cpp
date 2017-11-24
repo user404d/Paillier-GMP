@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cmath>
 #include <future>
 #include "impl.hpp"
@@ -129,11 +130,7 @@ mpz_class mu(const mpz_class n,
 
 std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mpz_class q)
 {
-    if (p > q)
-    {
-        throw std::runtime_error("p should be less than q");
-    }
-
+    assert(p < q && "p should be less than q");
     // compute n = p * q, g = n + 1, p^2, q^2
     const mpz_class n{p * q},
         g{n + 1U},
@@ -158,17 +155,11 @@ std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mp
  */
 std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mpz_class q, const mpz_class g)
 {
-    if (p > q)
-    {
-        throw std::runtime_error("p should be less than q");
-    }
+    assert(p < q && "p should be less than q");
 
     const mpz_class n{p * q}, p2{p * p}, q2{q * q}, lambda{key::lambda(p, q)};
 
-    if (gcd(g, n) != 1)
-    {
-        throw std::runtime_error("g is not relatively prime to n");
-    }
+    assert(gcd(g, n) == 1 && "g is not relatively prime to n");
 
     mpz_class p2invq2{};
     mpz_invert(p2invq2.get_mpz_t(), p2.get_mpz_t(), q2.get_mpz_t());
@@ -220,7 +211,7 @@ CipherText CipherText::mult(mpz_class constant, key::Public pub) const
     mpz_class result{};
     mpz_class n2{pub.n * pub.n};
     mpz_powm(result.get_mpz_t(), text.get_mpz_t(), constant.get_mpz_t(), n2.get_mpz_t());
-    return {std::move(result)};
+    return {result};
 }
 
 std::istream &operator>>(std::istream &is, CipherText &cipher)
@@ -246,31 +237,33 @@ CipherText PlainText::encrypt(key::Public pub) const
         mpz_powm(result.get_mpz_t(), basis.get_mpz_t(), exp.get_mpz_t(), modulus.get_mpz_t());
         return result;
     };
-    // std::cout << "----------- Encrypting ------------" << std::endl
-    //           << "plain: " << text << std::endl
-    //           << "n: " << pub.n << std::endl;
+
+    static const auto relatively_prime = [](const mpz_class n) {
+        mpz_class result{0U};
+        while (result == 0U || gcd(result, n) != 1)
+        {
+            result = tools::Random::get().random_n(n);
+        }
+        return result;
+    };
+
     mpz_class result{};
 
     if (pub.n != text)
     {
-        const mpz_class n2{pub.n * pub.n};
-        mpz_class random{0U}, temp{};
-        // std::cout << "n^2: " << n2 << std::endl;
         /* 
          * Encryption and decryption do not work properly for g = 1+n*m when the
          * random number chosen is a multiple of primes p or q
          *
          * https://crypto.stackexchange.com/questions/18058/choosing-primes-in-the-paillier-cryptosystem
          */
-        while (random == 0U || gcd(random, pub.n) != 1)
-        {
-            random = tools::Random::get().random_n(pub.n);
-        }
-        // std::cout << "random: " << random << std::endl;
+        std::future<mpz_class> f_random = std::async(std::launch::async, relatively_prime, pub.n);
+        const mpz_class n2{pub.n * pub.n};
+        mpz_class temp{};
 
-        std::future<mpz_class> f_result = std::async(std::launch::async, exponentiate, random, pub.n, n2);
+        std::future<mpz_class> f_result = std::async(std::launch::async, exponentiate, f_random.get(), pub.n, n2);
 
-        if (pub.g == 0U)
+        if (pub.g == 0U || pub.g == (pub.n + 1U))
         {
             temp = (text * pub.n) + 1U;
         }
@@ -284,10 +277,8 @@ CipherText PlainText::encrypt(key::Public pub) const
         result *= temp;
         result %= n2;
     }
-    // std::cout << "result: " << result << std::endl
-    //           << "------------------------------------" << std::endl;
 
-    return {std::move(result)};
+    return {result};
 }
 
 std::istream &operator>>(std::istream &is, PlainText &plain)
