@@ -32,16 +32,22 @@ Secure dot product using Paillier homomorphic encryption
 Usage:
   secure_dot_product [OPTION...]
 
-      --help        Print help message
-      --seed arg    Seed key generation with k,p,q,g
-      --keygen arg  Generate keys using k bits
-      --pub arg     File for public key
-      --priv arg    File for private key
-  -u, arg           File for vector u input
-      --eu arg      File for encrypted vector u output
-  -v, arg           File for vector v input
-      --ev arg      File for encrypted vector v output
-      --result arg  File for dot product output
+  -h, --help     Print help message
+      --pk FILE  Public key (required)
+      --sk FILE  Private key (required)
+
+ key generation options:
+      --seed FILE     Seed key generation with k,p,q,g
+  -k, --kbits uint64  Generate keys using k bits
+
+ input options:
+  -u, FILE  Vector u (default: u.vec)
+  -v, FILE  Vector v (default: v.vec)
+
+ output options:
+      --eu FILE      Encrypted vector u (default: u.vec.enc)
+      --ev FILE      Encrypted vector v (default: v.vec.enc)
+  -o, --output FILE  Dot product of u and v (default: res.out)
 ```
 
 ### Usage Notes
@@ -175,14 +181,14 @@ test -d ${TMP} || mkdir tmp
 echo "1 3 5 2 3 1 4" > ${TMP}/${U_VEC}
 echo "2 2 2 2 2 2 2" > ${TMP}/${V_VEC}
 
-./../bin/secure_dot_product --keygen 4096 \
-    --pub ${TMP}/pub.key \
-    --priv ${TMP}/priv.key \
+./../bin/secure_dot_product -k 4096 \
+    --pk ${TMP}/pub.key \
+    --sk ${TMP}/priv.key \
     -u  ${TMP}/${U_VEC} \
     -v ${TMP}/${V_VEC} \
     --eu ${TMP}/u.vec.enc \
     --ev ${TMP}/v.vec.enc \
-    --result ${TMP}/${RESULT}
+    -o ${TMP}/${RESULT}
 
 test_result `tail -1 ${TMP}/${RESULT}` "38" ${TMP}/pub.key
 ```

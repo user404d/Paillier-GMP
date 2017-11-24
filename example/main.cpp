@@ -1,4 +1,5 @@
 #include "cxxopts.hpp"
+#include <cinttypes>
 #include <fstream>
 #include <iostream>
 #include <paillier.hpp>
@@ -9,21 +10,33 @@ int main(int argc, char **argv)
 {
     cxxopts::Options options("secure_dot_product", "Secure dot product using Paillier homomorphic encryption");
 
-    uint64_t k = 0;
+    std::uint64_t k = 0ULL;
     std::string eu, ev, priv, pub, result, seed, u, v;
 
-    options.add_options()                                                               //
-        ("help", "Print help message")                                                  //
-        ("seed", "Seed key generation with k,p,q,g", cxxopts::value<std::string>(seed)) //
-        ("keygen", "Generate keys using k bits", cxxopts::value<uint64_t>(k))           //
-        ("pub", "File for public key", cxxopts::value<std::string>(pub))                //
-        ("priv", "File for private key", cxxopts::value<std::string>(priv))             //
-        ("u", "File for vector u input", cxxopts::value<std::string>(u))                //
-        ("eu", "File for encrypted vector u output", cxxopts::value<std::string>(eu))   //
-        ("v", "File for vector v input", cxxopts::value<std::string>(v))                //
-        ("ev", "File for encrypted vector v output", cxxopts::value<std::string>(ev))   //
-        ("result", "File for dot product output", cxxopts::value<std::string>(result))  //
+    options.add_options()                                              //
+        ("h, help", "Print help message")                              //
+        ("pk", "Public key (required)", cxxopts::value(pub), "FILE")   //
+        ("sk", "Private key (required)", cxxopts::value(priv), "FILE") //
         ;
+    options.add_options("key generation")                                          //
+        ("seed", "Seed key generation with k,p,q,g", cxxopts::value(seed), "FILE") //
+        ("k, kbits", "Generate keys using k bits", cxxopts::value(k), "uint64")    //
+        ;
+    options.add_options("input")                                             //
+        ("u", "Vector u", cxxopts::value(u)->default_value("u.vec"), "FILE") //
+        ("v", "Vector v", cxxopts::value(v)->default_value("v.vec"), "FILE") //
+        ;
+    options.add_options("output")                                                                        //
+        ("eu", "Encrypted vector u", cxxopts::value(eu)->default_value("u.vec.enc"), "FILE")             //
+        ("ev", "Encrypted vector v", cxxopts::value(ev)->default_value("v.vec.enc"), "FILE")             //
+        ("o,output", "Dot product of u and v", cxxopts::value(result)->default_value("res.out"), "FILE") //
+        ;
+
+    if (argc <= 1)
+    {
+        std::cout << options.help({"", "key generation", "input", "output"}) << std::endl;
+        exit(0);
+    }
 
     try
     {
@@ -31,7 +44,7 @@ int main(int argc, char **argv)
 
         if (options.count("help"))
         {
-            std::cout << options.help({""}) << std::endl;
+            std::cout << options.help({"", "key generation", "input", "output"}) << std::endl;
             exit(0);
         }
     }
@@ -44,19 +57,26 @@ int main(int argc, char **argv)
     using namespace paillier;
 
     // std::cout << "k: " << k << std::endl;
-
-    if (options.count("seed"))
+    if (options.count("pk") && options.count("sk"))
     {
-        io::keyseed(pub, priv, seed);
-    }
-    else if (options.count("keygen"))
-    {
-        if (k <= 0)
+        if (options.count("seed"))
         {
-            std::cerr << "k must be a positive integer greater than 0" << std::endl;
-            exit(1);
+            io::keyseed(pub, priv, seed);
         }
-        io::keygen(pub, priv, k);
+        else if (options.count("kbits"))
+        {
+            if (k <= 0)
+            {
+                std::cerr << "k must be a positive integer greater than 0" << std::endl;
+                exit(1);
+            }
+            io::keygen(pub, priv, k);
+        }
+    }
+    else
+    {
+        std::cerr << "both the private and public keys must have filepaths provided" << std::endl;
+        exit(1);
     }
 
     impl::key::Public pub_key{};
@@ -69,8 +89,8 @@ int main(int argc, char **argv)
         priv_in >> priv_key;
     }
 
-    auto u_vec = sdp::read_vector<impl::PlainText>(u);
-    auto v_vec = sdp::read_vector<impl::PlainText>(v);
+    const auto u_vec = sdp::read_vector<impl::PlainText>(u);
+    const auto v_vec = sdp::read_vector<impl::PlainText>(v);
 
     // std::cout << "u: [\n";
     // for (const auto &u_i : u_vec)
@@ -91,11 +111,16 @@ int main(int argc, char **argv)
         std::cerr << "vectors u and v are not the same length" << std::endl;
         exit(1);
     }
+    else if (u_vec.size() == 0)
+    {
+        std::cerr << "vectors should not have dimension size of 0" << std::endl;
+        exit(1);
+    }
 
-    auto encrypt = [=](const impl::PlainText &p) { return p.encrypt(pub_key); };
+    const auto encrypt = [=](const impl::PlainText &p) { return p.encrypt(pub_key); };
 
-    auto eu_vec = sdp::map<impl::PlainText, impl::CipherText>(u_vec, encrypt);
-    auto ev_vec = sdp::map<impl::PlainText, impl::CipherText>(v_vec, encrypt);
+    const auto eu_vec = sdp::map<impl::PlainText, impl::CipherText>(u_vec, encrypt);
+    const auto ev_vec = sdp::map<impl::PlainText, impl::CipherText>(v_vec, encrypt);
 
     // std::cout << "u (decrypted): [\n";
     // for (const auto &eu_i : eu_vec)
@@ -116,18 +141,18 @@ int main(int argc, char **argv)
     sdp::write_vector<impl::CipherText>(eu, eu_vec);
     sdp::write_vector<impl::CipherText>(ev, ev_vec);
 
-    auto mult = [=](const impl::CipherText &c, const impl::PlainText &p) {
+    const auto mult = [=](const impl::CipherText &c, const impl::PlainText &p) {
         return c.mult(p.text, pub_key);
     };
 
-    auto ev_u_vec = sdp::pairwise_map<impl::CipherText, impl::PlainText, impl::CipherText>(ev_vec, u_vec, mult);
+    const auto ev_u_vec = sdp::pairwise_map<impl::CipherText, impl::PlainText, impl::CipherText>(ev_vec, u_vec, mult);
 
-    auto add = [=](const impl::CipherText &acc, const impl::CipherText &c) {
+    const auto add = [=](const impl::CipherText &acc, const impl::CipherText &c) {
         return acc.add(c, pub_key);
     };
 
-    auto e_dot_prod = sdp::reduce<impl::CipherText, impl::CipherText>(ev_u_vec, add, impl::PlainText(0).encrypt(pub_key));
-    auto dot_prod = e_dot_prod.decrypt(priv_key);
+    const auto e_dot_prod = sdp::reduce<impl::CipherText, impl::CipherText>(ev_u_vec, add, impl::PlainText(0).encrypt(pub_key));
+    const auto dot_prod = e_dot_prod.decrypt(priv_key);
 
     // std::cout << "dot_prod: " << dot_prod << std::endl;
 
