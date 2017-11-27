@@ -133,7 +133,6 @@ std::pair<Private, Public> seed(const mp_bitcnt_t k, const mpz_class p, const mp
     assert(p < q && "p should be less than q");
     // compute n = p * q, g = n + 1, p^2, q^2
     const mpz_class n{p * q},
-        g{n + 1U},
         p2{p * p},
         q2{q * q},
         lambda{key::lambda(p, q)};
@@ -187,17 +186,7 @@ CipherText CipherText::add(CipherText a, key::Public pub) const
  */
 PlainText CipherText::decrypt(key::Private priv) const
 {
-    // std::cout << "~~~~~~~~~~~~ Decrypting ~~~~~~~~~~~" << std::endl
-    //           << "text: " << text << std::endl
-    //           << "lambda: " << priv.lambda << std::endl
-    //           << "mu: " << priv.mu << std::endl
-    //           << "n: " << priv.n << std::endl
-    //           << "p2: " << priv.p2 << std::endl
-    //           << "q2: " << priv.q2 << std::endl
-    //           << "p2invq2: " << priv.p2invq2 << std::endl;
     mpz_class crt{tools::crt_exponentiation(text, priv.lambda, priv.lambda, priv.p2invq2, priv.p2, priv.q2)};
-    // std::cout << "crt: " << crt << std::endl
-    //           << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
     return {(key::ell(crt, priv.n) * priv.mu) % priv.n};
 }
 
@@ -257,24 +246,22 @@ CipherText PlainText::encrypt(key::Public pub) const
          *
          * https://crypto.stackexchange.com/questions/18058/choosing-primes-in-the-paillier-cryptosystem
          */
-        std::future<mpz_class> f_random = std::async(std::launch::async, relatively_prime, pub.n);
+        std::future<mpz_class> f_random = std::async(relatively_prime, pub.n), f_temp;
         const mpz_class n2{pub.n * pub.n};
-        mpz_class temp{};
 
-        std::future<mpz_class> f_result = std::async(std::launch::async, exponentiate, f_random.get(), pub.n, n2);
+        std::future<mpz_class> f_result = std::async(exponentiate, f_random.get(), pub.n, n2);
 
         if (pub.g == 0U || pub.g == (pub.n + 1U))
         {
-            temp = (text * pub.n) + 1U;
+            f_temp = std::async([=]() -> mpz_class { return (text * pub.n) + 1U; });
         }
         else
         {
-            std::future<mpz_class> f_temp = std::async(std::launch::async, exponentiate, pub.g, text, n2);
-            temp = f_temp.get();
+            f_temp = std::async(exponentiate, pub.g, text, n2);
         }
 
         result = f_result.get();
-        result *= temp;
+        result *= f_temp.get();
         result %= n2;
     }
 
