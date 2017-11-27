@@ -38,10 +38,10 @@ mpz_class crt_exponentiation(const mpz_class base,
         return result;
     };
 
-    std::future<mpz_class> reduced_p = std::async(std::launch::async, exponentiate, base, exp_p, p);
-    std::future<mpz_class> reduced_q = std::async(std::launch::async, exponentiate, base, exp_q, q);
+    std::future<mpz_class> f_rp = std::async(exponentiate, base, exp_p, p);
+    std::future<mpz_class> f_rq = std::async(exponentiate, base, exp_q, q);
 
-    const mpz_class pq{p * q}, rp{reduced_p.get()}, rq{reduced_q.get()};
+    const mpz_class pq{p * q}, rp{f_rp.get()}, rq{f_rq.get()};
 
     mpz_class result{(rq - rp + q) * pinvq};
     result = rp + (result % q) * p;
