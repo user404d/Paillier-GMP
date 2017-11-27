@@ -1,10 +1,19 @@
+#include <algorithm>
 #include "cxxopts.hpp"
 #include <cinttypes>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <paillier.hpp>
 #include <string>
 #include <vector>
+
+template <typename T>
+std::vector<T> read_vector(paillier::io::ssv vector_path)
+{
+    std::fstream vector(vector_path.data(), vector.in);
+    return {std::istream_iterator<T>(vector), {}};
+}
 
 int main(int argc, char **argv)
 {
@@ -56,7 +65,6 @@ int main(int argc, char **argv)
 
     using namespace paillier;
 
-    // std::cout << "k: " << k << std::endl;
     if (options.count("pk") && options.count("sk"))
     {
         if (options.count("seed"))
@@ -89,22 +97,7 @@ int main(int argc, char **argv)
         priv_in >> priv_key;
     }
 
-    const auto u_vec = sdp::read_vector<impl::PlainText>(u);
-    const auto v_vec = sdp::read_vector<impl::PlainText>(v);
-
-    // std::cout << "u: [\n";
-    // for (const auto &u_i : u_vec)
-    // {
-    //     std::cout << u_i << std::endl;
-    // }
-    // std::cout << "]" << std::endl;
-
-    // std::cout << "v: [\n";
-    // for (const auto &v_i : v_vec)
-    // {
-    //     std::cout << v_i << std::endl;
-    // }
-    // std::cout << "]" << std::endl;
+    const auto u_vec = read_vector<impl::PlainText>(u), v_vec = read_vector<impl::PlainText>(v);
 
     if (u_vec.size() != v_vec.size())
     {
@@ -117,44 +110,42 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    const auto encrypt = [=](const impl::PlainText &p) { return p.encrypt(pub_key); };
-
-    const auto eu_vec = sdp::map<impl::PlainText, impl::CipherText>(u_vec, encrypt);
-    const auto ev_vec = sdp::map<impl::PlainText, impl::CipherText>(v_vec, encrypt);
-
-    // std::cout << "u (decrypted): [\n";
-    // for (const auto &eu_i : eu_vec)
-    // {
-    //     auto u_i = eu_i.decrypt(priv_key);
-    //     std::cout << u_i << "," << std::endl;
-    // }
-    // std::cout << "]" << std::endl;
-
-    // std::cout << "v (decrypted): [\n";
-    // for (const auto &ev_i : ev_vec)
-    // {
-    //     auto v_i = ev_i.decrypt(priv_key);
-    //     std::cout << v_i << "," << std::endl;
-    // }
-    // std::cout << "]" << std::endl;
-
-    sdp::write_vector<impl::CipherText>(eu, eu_vec);
-    sdp::write_vector<impl::CipherText>(ev, ev_vec);
-
-    const auto mult = [=](const impl::CipherText &c, const impl::PlainText &p) {
-        return c.mult(p.text, pub_key);
+    const auto f_encrypt = [=](const impl::PlainText &p) {
+        static const auto encrypt = [pub_key](const impl::PlainText &p) { return p.encrypt(pub_key); };
+        return std::async(encrypt, p);
     };
 
-    const auto ev_u_vec = sdp::pairwise_map<impl::CipherText, impl::PlainText, impl::CipherText>(ev_vec, u_vec, mult);
-
-    const auto add = [=](const impl::CipherText &acc, const impl::CipherText &c) {
-        return acc.add(c, pub_key);
+    const auto f_mult = [=](const std::shared_future<impl::CipherText> &f_c, const impl::PlainText &p) {
+        static const auto mult = [pub_key](const impl::CipherText &c, const impl::PlainText &p) {
+            return c.mult(p.text, pub_key);
+        };
+        return std::async(mult, f_c.get(), p);
     };
 
-    const auto e_dot_prod = sdp::reduce<impl::CipherText, impl::CipherText>(ev_u_vec, add, impl::PlainText(0).encrypt(pub_key));
+    const auto add = [pub_key](const impl::CipherText &acc, const std::shared_future<impl::CipherText> &f_c) {
+        return acc.add(f_c.get(), pub_key);
+    };
+
+    const auto write = [](io::ssv out, const std::vector<std::shared_future<impl::CipherText>> &v_f_c) {
+        std::fstream vector(out.data(), vector.out);
+        for (const auto &f_c : v_f_c)
+        {
+            vector << f_c.get() << std::endl;
+        }
+    };
+
+    std::vector<std::shared_future<impl::CipherText>> f_eu_vec, f_ev_vec, f_ev_u_vec;
+
+    std::transform(u_vec.begin(), u_vec.end(), std::back_inserter(f_eu_vec), f_encrypt);
+    std::transform(v_vec.begin(), v_vec.end(), std::back_inserter(f_ev_vec), f_encrypt);
+
+    std::thread(write, eu, f_eu_vec).detach();
+    std::thread(write, ev, f_ev_vec).detach();
+
+    std::transform(f_ev_vec.begin(), f_ev_vec.end(), u_vec.begin(), std::back_inserter(f_ev_u_vec), f_mult);
+
+    const auto e_dot_prod = std::accumulate(f_ev_u_vec.begin(), f_ev_u_vec.end(), impl::PlainText(0).encrypt(pub_key), add);
     const auto dot_prod = e_dot_prod.decrypt(priv_key);
-
-    // std::cout << "dot_prod: " << dot_prod << std::endl;
 
     {
         std::fstream res(result, res.out);

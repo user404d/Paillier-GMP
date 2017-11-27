@@ -38,7 +38,6 @@ include_directories(/usr/local/include include src)
 add_library(paillier SHARED
             src/impl.cpp
             src/io.cpp
-            src/secure_dot_product.cpp
             src/tools.cpp)
 target_link_libraries(paillier ${GMP} ${GMPXX})
 set_target_properties(paillier PROPERTIES
